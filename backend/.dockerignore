@@ -1,0 +1,15 @@
+__pycache__
+*.pyc
+.venv
+venv
+.env
+.git
+.gitignore
+README.md
+.DS_Store
+*.egg-info
+dist
+build
+node_modules
+.vercel
+.pytest_cache
