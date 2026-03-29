@@ -1,0 +1,76 @@
+# Global Authentication System - Visual Flow
+
+## 🎭 Application States
+
+### State 1: UNAUTHORIZED (Fresh Load)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     BROWSER WINDOW (5175)                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │                                                         │ │
+│  │          [FIXED OVERLAY - z-40, bg-black/50]          │ │
+│  │                                                         │ │
+│  │              ╔════════════════════════════╗             │ │
+│  │              ║      WELCOME MODAL         ║             │ │\n  │              ║                                ║             │ │
+│  │              ║  Please login or register  ║             │ │
+│  │              ║  to continue              ║             │ │
+│  │              ║                            ║             │ │
+│  │              ║  [Login]   [Register]    ║             │ │
+│  │              ║                            ║             │ │
+│  │              ║ Demo: demo / demo123      ║             │ │
+│  │              ╚════════════════════════════╝             │ │
+│  │                                                         │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+│  BEHIND MODAL (blurred, opacity-40, pointer-events-none):   │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ Smart Gov Assistant | Search... [Login] [Register]     │ │
+│  ├────────────────────────────────────────────────────────┤ │
+│  │                                                         │ │
+│  │               [CONTENT BLURRED & DISABLED]             │ │
+│  │                                                         │ │
+│  │  Hero Search | Service Timeline | Widgets             │ │
+│  │  (All grayed out, can't click)                          │ │
+│  │                                                         │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │\n└─────────────────────────────────────────────────────────────┘
+
+ CONDITIONS & STATE:
+ ├─ authToken = \"\" (empty)
+ ├─ authUsername = \"\" (empty)\n ├─ showAuthForm = false (initially)
+ └─ localStorage = {} (empty)
+```
+
+---
+
+### State 2: LOGIN PROCESS
+
+```
+┌─────────────────────────────────────────────────────────────┐\n│              USER CLICKS [Login] BUTTON                     │
+└────────────────────┬────────────────────────────────────────┘
+                      ↓
+                 openAuthPanel(\"login\")
+                      ├─ setAuthTabTarget(\"login\")
+                      ├─ setShowAuthForm(true)
+                      └─ Smooth scroll to #auth-section
+                      ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   AUTH FORM APPEARS                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  [Login Tab] [Register Tab]                                 │
+│                                                              │
+│  Username: [demo        ]                                   │
+│  Password: [demo123     ]                                   │
+│                                                              │
+│  [Sign In]                                                  │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+                      ↓
+              USER CLICKS [Sign In]
+                      ├─ loginUser() API call\n               ├─ Success ✓\n               └─ handleLoginSuccess() called\n                      ↓
+              setAuthToken(\"jwt_token\")\n          setAuthUsername(\"demo\")\n    localStorage.setItem(\"authToken\", ...)\n localStorage.setItem(\"authUsername\", \"demo\")\n            setShowAuthForm(false) ✓ CLOSES FORM\n            Toast: \"Successfully logged in!\"\n                      ↓\n```\n\n---\n\n### State 3: AUTHORIZED (After Login)\n\n```\n┌─────────────────────────────────────────────────────────────┐\n│                     BROWSER WINDOW (5175)                   │\n├─────────────────────────────────────────────────────────────┤\n│                                                              │\n│  ✓ MODAL GONE (opacity-40 blur removed)                    │\n│  ✓ CONTENT CLEAR (opacity-100, no blur, interactive)       │\n│                                                              │\n│  ┌────────────────────────────────────────────────────────┐ │\n│  │ Smart Gov Assistant | Search... | [Shaxsiy kabinet] │ │\n│  │                                   (demo) [Logout]      │ │\n│  ├────────────────────────────────────────────────────────┤ │\n│  │                                                         │ │\n│  │        HERO SEARCH (FULLY VISIBLE & INTERACTIVE)       │ │\n│  │                                                         │ │\n│  │     [🔍 Describe your situation...]  [Find Services] │ │\n│  │                                                         │ │\n│  │     Language: [UZ] [RU] [EN]                           │ │\n│  │                                                         │ │\n│  │     □ Explain simply                                   │ │\n│  │                                                         │ │
+│  │                                                         │ │\n│  └────────────────────────────────────────────────────────┘ │\n│                                                              │\n│  WIDGETS & TIMELINE (All interactive now)                   │\n│  ┌─────────────────────┬─────────────────────┐             │\n│  │ Your Documents      │ Notifications       │             │\n│  │ In One Place        │ Important Reminders │             │\n│  └─────────────────────┴─────────────────────┘             │\n│                                                              │\n│  SERVICE TIMELINE & RECOMMENDATIONS AVAILABLE              │\n│                                                              │\n└─────────────────────────────────────────────────────────────┘\n\n CONDITIONS & STATE:\n ├─ authToken = \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\" ✓\n ├─ authUsername = \"demo\" ✓\n ├─ showAuthForm = false (form hidden) ✓\n └─ localStorage = {\n     \"authToken\": \"...\",\n     \"authUsername\": \"demo\"\n   } ✓\n```\n\n---\n\n### State 4: PAGE RELOAD (Persistence)\n\n```\nUSER PRESSES F5 (Page Reload)\n        ↓\n   [Page reloads]\n        ↓\n Component mounts → useEffect runs\n        ↓\nconst storedToken = localStorage.getItem(\"authToken\")\nconst storedUsername = localStorage.getItem(\"authUsername\")\n        ↓\n   if (storedToken && storedUsername) {\n     setAuthToken(storedToken)           ✓\n     setAuthUsername(storedUsername)     ✓\n     setShowAuthForm(false)              ✓\n   }\n        ↓\n   Page loads INSTANTLY with user still logged in\n   (NO need to login again!)\n```\n\n---\n\n### State 5: LOGOUT\n\n```\nUSER CLICKS [Logout] BUTTON\n        ↓\n   handleLogout() called\n        ├─ setAuthToken(\"\")                      ✓ Clear state\n        ├─ setAuthUsername(\"\")                    ✓ Clear state\n        ├─ localStorage.removeItem(\"authToken\")  ✓ Clear storage\n        ├─ localStorage.removeItem(\"authUsername\") ✓ Clear storage\n        └─ setShowAuthForm(false)\n        ↓\n   Toast: \"You are logged out\"\n        ↓\n   BACK TO STATE 1 (UNAUTHORIZED)\n   ├─ Modal reappears\n   ├─ Content blurs (opacity-40 blur-sm)\n   └─ Clicks disabled (pointer-events-none)\n```\n\n---\n\n## 🔄 Complete User Journey\n\n```\n                    ╔════════════════════════════════════════════╗\n                    ║     FRESH APP LOAD (First Time User)       ║\n                    ╚════════════════════════════════════════════╝\n                                      ↓\n                         [UNAUTHORIZED STATE 1]\n                         Modal appears, content blurred\n                                      ↓\n          ┌─────────────────────────────────────────┬──────────────────┐\n          ↓                                         ↓                   ↓\n     [Click Login]                         [Click Register]      [Browser Close]\n          ↓                                         ↓                   ↓\n   [Show Auth Form]                       [Show Reg Form]        localStorage saved\n   [Enter demo creds]                     [Enter new info]\n          ↓                                         ↓\n   [Submit Login] ✓                       [Submit Register] ✓\n          ↓                                         ↓\n   [STATE 3: AUTHORIZED]              [auto-tab switch]\n   Content clears, can search              1.5s delay\n          ↓                                         ↓\n          │────────────────────┬───────────────────│\n          │                    ↓                     ↓\n          │             [Show Login Tab]      [User presses F5]\n          │             [Enter new creds]            ↓\n          │             [Submit Login] ✓      [STATE 3: AUTHORIZED]\n          │                    │               Form hidden,\n          │                    └────────→→→ localStorage restored\n          ↓                                         ↓\n   [Use App Features]                      [Use App Features]\n   [Search Services]                       [Search Services]\n   [View Timeline]                         [View Timeline]\n          ↓ (or browser close)                     ↓\n   [USER CLICKS LOGOUT]                   [USER CLICKS LOGOUT]\n          ↓                                         ↓\n   [Back to STATE 1]                     [Back to STATE 1]\n   Modal reappears                        Modal reappears\n```\n\n---\n\n## 📊 State Transition Matrix\n\n```\n┌─────────────────┬──────────────┬──────────────┬─────────────────┐\n│ Current State   │ Action       │ New State    │ Side Effects    │\n├─────────────────┼──────────────┼──────────────┼─────────────────┤\n│ UNAUTHORIZED    │ Login ✓      │ AUTHORIZED   │ localStorage++  │\n│                 │ Register ✓   │ → Login      │ Modal closed    │\n│                 │              │              │ Content clears  │\n├─────────────────┼──────────────┼──────────────┼─────────────────┤\n│ AUTHORIZED      │ Logout       │ UNAUTHORIZED │ localStorage--  │\n│                 │              │              │ Modal appears   │\n│                 │              │              │ Content blurs   │\n├─────────────────┼──────────────┼──────────────┼─────────────────┤\n│ AUTHORIZED      │ Page Reload  │ AUTHORIZED   │ localStorage    │\n│                 │              │ (restored)   │ read            │\n├─────────────────┼──────────────┼──────────────┼─────────────────┤\n│ UNAUTHORIZED    │ Page Reload  │ UNAUTHORIZED │ localStorage    │\n│                 │              │              │ empty           │\n└─────────────────┴──────────────┴──────────────┴─────────────────┘\n```\n\n---\n\n## 🎯 Key Features Visualized\n\n### Feature 1: Modal Overlay\n```\n<div className=\"fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm\">\n  ↓\n  Covers entire viewport\n  Semi-transparent dark background\n  Blurs everything behind it\n  Cannot click through (z-40)\n</div>\n```\n\n### Feature 2: Content Blur & Disable\n```\n<main className={`space-y-4 ${!authToken ? \"pointer-events-none opacity-40 blur-sm\" : \"\"}`}>\n  ↓\n  If NOT logged in: opacity-40 blur-sm pointer-events-none\n  If logged in: Normal (opacity-100, no blur, clickable)\n</main>\n```\n\n### Feature 3: localStorage Persistence\n```\nKey: \"authToken\"     → Value: \"eyJhbGciOi...\"\nKey: \"authUsername\" → Value: \"demo\"\n\nOn page load:\n  const token = localStorage.getItem(\"authToken\")\n  if (token) setAuthToken(token) → User auto-logged in ✓\n\nOn logout:\n  localStorage.removeItem(\"authToken\")\n  localStorage.removeItem(\"authUsername\")\n  → Both removed, user logged out\n```\n\n### Feature 4: Auto-Form-Close\n```\nAfter successful login:\n  setShowAuthForm(false)\n  └─ Form disappears instantly\n     (No page reload needed!)\n```\n\n---\n\n## 📱 Responsive Behavior\n\n```\nMOBILE (< 640px):\n┌─────────────────┐\n│ Welcome!        │\n│ Modal centered  │\n│ Full width -8px │\n│ Touch-friendly  │\n└─────────────────┘\n\nDESKTOP (> 640px):\n┌─────────────────────────────────────┐\n│         Larger modal (max-w-md)     │\n│         Better spacing              │\n│         More readable               │\n└─────────────────────────────────────┘\n```\n\n---\n\n## 🚀 Performance Notes\n\n✓ No page reloads (SPA architecture)\n✓ localStorage reads (instant, no network)\n✓ CSS-based blur (GPU accelerated)\n✓ React reconciliation optimized (only affected elements re-render)\n✓ Smooth 60fps transitions\n"
