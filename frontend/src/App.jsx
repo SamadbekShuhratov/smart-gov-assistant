@@ -159,6 +159,7 @@ function buildQuestionConfig(step) {
 }
 
 function App() {
+  const API_BASE = import.meta.env.VITE_API_BASE || "";
   const [query, setQuery] = useState("");
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -462,7 +463,7 @@ function App() {
     setServiceDetailsLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:8000/service-details/${encodeURIComponent(serviceName)}?language=${uiLanguage}`
+        `${API_BASE}/service-details/${encodeURIComponent(serviceName)}?language=${uiLanguage}`
       );
       if (!response.ok) {
         throw new Error("Failed to load service details");

@@ -10,7 +10,7 @@ This guide covers deploying the FastAPI backend to Railway and setting up Supaba
 │ (Frontend React)│────────┐
 └─────────────────┘        │
                            │
-                    VITE_API_BASE
+                    _API_BASE
                            │
                            ▼
                     ┌──────────────┐
