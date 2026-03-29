@@ -339,6 +339,49 @@ def search_services(query: str, services: List[Dict[str, Any]], limit: int = 10)
     return [dict(service) for _, service in top_results]
 
 
+def search_services_prefix(query: str, services: List[Dict[str, Any]], limit: int = 10) -> List[Dict[str, Any]]:
+    """Prefix-based search used for autocomplete.
+
+    The main ranker intentionally avoids fuzzy matches on very short tokens.
+    Autocomplete needs the opposite: if a user types a short prefix like "bol",
+    we should still return services that start with that prefix.
+    """
+
+    normalized_query = _normalize_text(query)
+    if not normalized_query or len(normalized_query) < 2:
+        return []
+
+    # Use first token as the autocomplete prefix (matches how frontend calls /suggest).
+    prefix = _split_words(normalized_query)[0] if _split_words(normalized_query) else normalized_query
+    if len(prefix) < 2:
+        return []
+
+    matches: List[Dict[str, Any]] = []
+    seen: set[str] = set()
+
+    for service in services or []:
+        name = str(service.get("name", "")).strip()
+        if not name:
+            continue
+
+        normalized_name = _normalize_text(name)
+        name_tokens = _split_words(normalized_name)
+        keyword_tokens: List[str] = []
+        for keyword in service.get("keywords", []) or []:
+            keyword_tokens.extend(_split_words(_normalize_text(str(keyword))))
+
+        if any(token.startswith(prefix) for token in name_tokens) or any(token.startswith(prefix) for token in keyword_tokens):
+            key = normalized_name
+            if key in seen:
+                continue
+            seen.add(key)
+            matches.append(dict(service))
+            if len(matches) >= max(1, min(limit, 10)):
+                break
+
+    return matches
+
+
 def _extract_required_documents(description: str) -> List[str]:
     normalized = description.strip()
     if not normalized:

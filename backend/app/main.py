@@ -56,7 +56,14 @@ from .ai_service import (
     localize_service_record,
     test_gemini_connection,
 )
-from .services_loader import build_scenario, find_similar_services, get_services, rank_services, search_services
+from .services_loader import (
+    build_scenario,
+    find_similar_services,
+    get_services,
+    rank_services,
+    search_services,
+    search_services_prefix,
+)
 
 app = FastAPI(
     title="Smart Gov Assistant API",
@@ -777,7 +784,8 @@ def suggest_services(q: str = Query(default="", min_length=0, max_length=200)) -
     except FileNotFoundError:
         return {"suggestions": []}
 
-    matched = search_services(query, services)
+    # Autocomplete should work for short prefixes (e.g., "bol" -> "Bolalar ...").
+    matched = search_services_prefix(query, services) if len(query) < 4 else search_services(query, services)
     suggestions = [
         {
             "name": str(service.get("name", "")).strip(),
