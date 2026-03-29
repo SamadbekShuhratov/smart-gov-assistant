@@ -17,3 +17,7 @@ backend/.env
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Local venv
+.venv/
+.vscode/
