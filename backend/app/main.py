@@ -28,6 +28,9 @@ from .models import (
     AutoFillResponse,
     ConversationHistoryItem,
     DynamicAnalyzeRequest,
+    DynamicAnalyzeDifference,
+    DynamicAnalyzeSection,
+    DynamicAnalyzeStep,
     DynamicAnalyzeResponse,
     DynamicRecommendedService,
     DynamicSection,
@@ -45,6 +48,7 @@ from .models import (
     RegisterRequest,
     RegisterResponse,
     ScenarioDetail,
+    ScenarioHint,
     StaticSection,
 )
 from .ai_service import (
@@ -873,20 +877,26 @@ def analyze_dynamic(request: DynamicAnalyzeRequest) -> DynamicAnalyzeResponse:
 
     scenario = build_scenario(request.query, matched_services)
 
-    localized_steps = [_localize_dynamic_step(step, language) for step in scenario.get("steps", [])]
-    localized_sections: list[dict[str, Any]] = []
+    localized_steps = [
+        DynamicAnalyzeStep.model_validate(_localize_dynamic_step(step, language))
+        for step in scenario.get("steps", [])
+    ]
+    localized_sections: list[DynamicAnalyzeSection] = []
     for section in scenario.get("sections", []):
         section_dict = _to_step_dict(section)
         localized_section_title = localize_service_record(
             {"name": section_dict.get("title", ""), "description": "", "category": ""},
             language,
         ).get("name", section_dict.get("title", ""))
-        localized_section_steps = [_localize_dynamic_step(step, language) for step in section_dict.get("steps", [])]
+        localized_section_steps = [
+            DynamicAnalyzeStep.model_validate(_localize_dynamic_step(step, language))
+            for step in section_dict.get("steps", [])
+        ]
         localized_sections.append(
-            {
-                "title": localized_section_title,
-                "steps": localized_section_steps,
-            }
+            DynamicAnalyzeSection(
+                title=localized_section_title,
+                steps=localized_section_steps,
+            )
         )
 
     differences = find_similar_services(matched_services)
@@ -931,12 +941,14 @@ def analyze_dynamic(request: DynamicAnalyzeRequest) -> DynamicAnalyzeResponse:
     strongest_score = ranked_services[0][0] if ranked_services else 0
     fallback_message = "" if strongest_score >= 3 else friendly_empty_message
 
+    difference_models = [DynamicAnalyzeDifference.model_validate(item) for item in (differences or [])]
+
     return DynamicAnalyzeResponse(
         scenario=scenario.get("scenario", "dynamic"),
         scenario_display=scenario.get("scenario_display", request.query.strip()),
         sections=localized_sections,
         steps=localized_steps,
-        differences=differences,
+        differences=difference_models,
         recommendations=recommendations,
         suggested_scenarios=suggested_scenarios,
         message=fallback_message,
@@ -1287,11 +1299,13 @@ def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
         return AnalyzeResponse(language=request.language, scenarios=[])
 
     localized = [
-        to_localized_scenario_hint(
-            scenario_id=match["id"],
-            confidence=match["confidence"],
-            language=request.language,
-            matched_keywords=match["matched_keywords"],
+        ScenarioHint.model_validate(
+            to_localized_scenario_hint(
+                scenario_id=match["id"],
+                confidence=match["confidence"],
+                language=request.language,
+                matched_keywords=match["matched_keywords"],
+            )
         )
         for match in matches[:3]
     ]

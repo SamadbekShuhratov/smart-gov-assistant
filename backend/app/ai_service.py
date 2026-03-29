@@ -11,7 +11,7 @@ from .translator import translate_text
 
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))  # type: ignore[attr-defined]
 
 logger = logging.getLogger(__name__)
 
@@ -1024,7 +1024,7 @@ def _resolve_model_name() -> str:
     try:
         available = {
             model.name.replace("models/", "")
-            for model in genai.list_models()
+            for model in genai.list_models()  # type: ignore[attr-defined]
             if "generateContent" in (getattr(model, "supported_generation_methods", []) or [])
         }
     except Exception:
@@ -1060,7 +1060,7 @@ def generate_ai_response(query: str, services: list[dict[str, Any]], language: s
     try:
         logger.info("Sending request to Gemini...")
         logger.info("Prompt length: %s", len(prompt))
-        model = genai.GenerativeModel(_resolve_model_name())
+        model = genai.GenerativeModel(_resolve_model_name())  # type: ignore[attr-defined]
         response = model.generate_content(prompt)
         raw_text = getattr(response, "text", "") or ""
         logger.info("Raw Gemini response: %s", raw_text)
@@ -1092,7 +1092,7 @@ def generate_ai_response(query: str, services: list[dict[str, Any]], language: s
 def test_gemini_connection() -> dict[str, Any]:
     prompt = "Say hello in JSON format"
     try:
-        model = genai.GenerativeModel(_resolve_model_name())
+        model = genai.GenerativeModel(_resolve_model_name())  # type: ignore[attr-defined]
         response = model.generate_content(prompt)
         return {
             "ok": True,
